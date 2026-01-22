@@ -71,9 +71,9 @@ The LightGBM model demonstrated robust performance on unseen future data:
 
 | Metric | Value | Interpretation |
 | :--- | :--- | :--- |
-| **MAE (Mean Absolute Error)** | **[17.5314] min** | On average, the prediction deviates by this amount. |
-| **RMSE (Root Mean Sq. Error)** | **[22.4339] min** | Penalizes large errors; used as the primary loss function. |
-| **R² Score** | **[0.8139]** | Explains the variance in delivery times. |
+| **MAE (Mean Absolute Error)** | **17.5314 min** | On average, the prediction deviates by this amount. |
+| **RMSE (Root Mean Sq. Error)** | **22.4339 min** | Penalizes large errors; used as the primary loss function. |
+| **R² Score** | **0.8139** | Explains the variance in delivery times. |
 
 * **Feature Importance:** The model identified **Traffic Density**, **Vehicle Type**, and **Weather** as the top drivers of delay, validating the business logic.
 
@@ -143,3 +143,4 @@ To evolve this from a generic portfolio project to an enterprise solution:
 
 ---
 *Copyright (c) 2026 Halil Kaan Kaçar. Distributed under the MIT License.*
+
