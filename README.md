@@ -143,10 +143,11 @@ To evolve this from a generic portfolio project to an enterprise solution:
 **Halil Kaan Kaçar**
 * **Role:** Industrial Engineering (Major) & Logistics Management (Minor) Student
 * **Focus:** Supply Chain Analytics, Machine Learning, Operations Research
-* **Connect:** [LinkedIn]([https://www.linkedin.com/in/halilkaankacar/])
+* **Connect:** [LinkedIn](https://www.linkedin.com/in/halilkaankacar/)
 
 ---
 *Copyright (c) 2026 Halil Kaan Kaçar. Distributed under the MIT License.*
+
 
 
 
