@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python)
 ![LightGBM](https://img.shields.io/badge/Model-LightGBM-green?style=for-the-badge&logo=google)
 ![Folium](https://img.shields.io/badge/Viz-Geospatial_Analytics-orange?style=for-the-badge&logo=leaflet)
-![Status](https://img.shields.io/badge/Status-Production_Ready-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Portfolio_Prototype-blue?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
 
 > **An End-to-End Decision Support System (DSS) designed to address operational uncertainty in last-mile logistics.**
@@ -39,10 +39,7 @@
 
 ## 3. ⚙️ Pipeline Architecture
 
-The project follows a linear, modular workflow designed for reproducibility: 
-
-[Image of machine learning pipeline diagram]
-
+The project follows a linear, modular workflow designed for reproducibility:
 
 1.  **Cleaning & EDA:** Handling missing values, formatting dates, and analyzing distributions (`01_eda...`).
 2.  **Feature Engineering:** Creating geospatial and temporal features.
@@ -56,7 +53,7 @@ The project follows a linear, modular workflow designed for reproducibility:
 
 Raw data was transformed into actionable signals:
 
-* **📍 Haversine Distance:** Calculated the geodesic distance (km) between warehouse and delivery points using coordinates. 
+* **📍 Haversine Distance:** Calculated the geodesic distance (km) between warehouse and delivery points using coordinates.
 * **🕒 Temporal Buckets:** Created `Order_Period` (Morning, Afternoon, Evening, Late Night) to capture traffic patterns and human fatigue factors.
 * **🚦 Categorical Handling:** Optimized for LightGBM's native categorical support (avoiding sparse One-Hot matrices for High Cardinality data).
 * **📉 Outlier Management:** Capped extreme delivery times based on IQR logic to prevent model skewing.
@@ -69,33 +66,36 @@ Raw data was transformed into actionable signals:
 * **Split Strategy:** Used **Time-Based Splitting** (sorting by date) instead of random `train_test_split`. This prevents data leakage by ensuring the model trains on "past" data to predict "future" orders.
 * **Model Selection:** **LightGBM** was chosen over Random Forest and XGBoost due to its superior speed (10x faster inference) and native handling of categorical logistics variables.
 
-### Performance Metrics
-* **RMSE (Root Mean Squared Error):** Optimized to minimize minute-level deviations.
-* **R² Score:** High variance explanation capabilities.
+### 🏆 Model Performance (Test Set)
+The LightGBM model demonstrated robust performance on unseen future data:
+
+| Metric | Value | Interpretation |
+| :--- | :--- | :--- |
+| **MAE (Mean Absolute Error)** | **[17.5314] min** | On average, the prediction deviates by this amount. |
+| **RMSE (Root Mean Sq. Error)** | **[22.4339] min** | Penalizes large errors; used as the primary loss function. |
+| **R² Score** | **[0.8139]** | Explains the variance in delivery times. |
+
 * **Feature Importance:** The model identified **Traffic Density**, **Vehicle Type**, and **Weather** as the top drivers of delay, validating the business logic.
 
 ---
 
 ## 6. ⚠️ Risk & Priority Score Definition
 
-A raw prediction (e.g., "45 mins") is not actionable. I engineered a heuristic logic to translate "Time" into "Urgency". 
+To make the predictions actionable, I designed a two-layer risk evaluation system.
 
-[Image of risk matrix heatmap]
-
-
-### A. Risk Labels (Prototype / Offline)
-Labels are derived from the Absolute Error between prediction and actual time:
+### Layer 1: Risk Classification (Offline / Validation)
+This metric defines "Risk" based on the deviation between Actual vs. Predicted time (Model Uncertainty). It is used to label historical data for analysis.
+* **Formula:** `Abs_Error = |Actual_Time - Predicted_Time|`
 * **Low Risk:** Deviation < 15 mins
-* **Medium Risk:** 15 mins < Deviation < 30 mins
-* **High Risk:** Deviation > 30 mins
+* **Medium Risk:** 15 mins ≤ Deviation < 30 mins
+* **High Risk:** Deviation ≥ 30 mins
 
-### B. Priority Score Formula (Production)
-A weighted formula to rank orders dynamically:
+### Layer 2: Priority Score (Online / Production)
+Since we don't know the "Actual Time" in a live scenario, this heuristic score is calculated using real-time inputs to rank orders **before** dispatch.
 
 $$\text{Priority Score} = (\text{Norm. Prediction} \times \alpha) + (\text{Traffic Penalty} \times \beta) + (\text{Weather Penalty} \times \gamma)$$
 
-* *Parameters ($\alpha, \beta, \gamma$) are tunable based on the company's SLA requirements.*
-* **Logic:** A motorcycle in a "Sandstorm" gets a higher priority score than a van in "Sunny" weather, even if the distance is shorter.
+* **Goal:** A motorcycle in a "Sandstorm" gets a higher priority score than a van in "Sunny" weather, enabling dynamic rerouting.
 
 ---
 
@@ -106,7 +106,7 @@ The system generates the following artifacts:
 * **`models/lightgbm_delivery.pkl`**: The trained, serialized model ready for inference.
 * **`models/features_used.csv`**: Schema file ensuring new data matches training columns.
 * **`data/processed/smart_routing.csv`**: The final operational file containing predictions and risk scores.
-* **`visualizations/priority_map.html`**: **The MVP Product.** An interactive map showing high-risk clusters. 
+* **`visualizations/priority_map.html`**: **The MVP Product.** An interactive map showing high-risk clusters.
 * **`visualizations/priority_table.csv`**: A ranked list of orders requiring immediate attention.
 
 ---
