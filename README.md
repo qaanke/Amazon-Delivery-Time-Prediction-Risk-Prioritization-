@@ -121,6 +121,10 @@ The system generates the following artifacts:
     * **🟢 Heatmap:** General order density.
     * **Click Markers:** View details like Order ID, Predicted Time, and Traffic Status.
 
+## 🗺️ Dashboard Preview
+![Risk Priority Map Preview](priority_map.JPG)
+> *Interactive Decision Support Map: Red markers indicate high-risk deliveries predicted by the system.*
+
 ---
 
 ## 9. 🔮 Limitations & Next Steps
@@ -137,10 +141,11 @@ To evolve this from a generic portfolio project to an enterprise solution:
 ## 👤 Author
 
 **Halil Kaan Kaçar**
-* **Role:** Industrial Engineering Student & Logistics Optimization Enthusiast
+* **Role:** Industrial Engineering (Major) & Logistics Management (Minor) Student
 * **Focus:** Supply Chain Analytics, Machine Learning, Operations Research
-* **Connect:** [LinkedIn](https://www.linkedin.com/in/halil-kaan-kacar-59b366258/)
+* **Connect:** [LinkedIn]([https://www.linkedin.com/in/halilkaankacar/]))
 
 ---
 *Copyright (c) 2026 Halil Kaan Kaçar. Distributed under the MIT License.*
+
 
