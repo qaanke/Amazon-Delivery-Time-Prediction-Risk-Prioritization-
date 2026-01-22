@@ -10,78 +10,136 @@
 
 ---
 
-## 🎯 Project Vision: Why this exists?
+## 1. 🌍 Project Summary
 
-In Last-Mile Logistics, **averages are misleading.** Knowing that a delivery takes "30 minutes on average" is useless when a sandstorm hits or traffic jams occur.
+**The Problem:** In logistics, average delivery times are misleading. Standard models predict *when* a package arrives but fail to identify *which* deliveries are at risk of failure due to dynamic factors like traffic jams or severe weather.
 
-This project is not just a time prediction model; it is a **Risk Management Tool**. It shifts the focus from *"When will it arrive?"* to *"Which orders are about to fail?"*.
+**The Solution:** A holistic system that:
+1.  **Predicts** exact delivery duration using Gradient Boosting (LightGBM).
+2.  **Quantifies Risk** via a custom `Priority Score` algorithm.
+3.  **Visualizes** bottlenecks on an interactive map for proactive intervention.
 
-**Core Value Proposition:**
-1.  **Dynamic Prediction:** Uses Machine Learning to predict delivery time based on real-time conditions (Weather, Traffic, Vehicle Type).
-2.  **Risk Quantification:** Converts predictions into a `Priority Score` to rank orders by urgency.
-3.  **Visual Intelligence:** Plots high-risk bottlenecks on an interactive map for immediate operational intervention.
-
----
-
-## 🛠️ Engineering Decisions & Critical Methodology
-
-Unlike standard data science projects, every step here was taken with **production reality** in mind.
-
-### 1. 🛑 Prevention of Data Leakage (Temporal Splitting)
-* **The Problem:** In many tutorials, data is split randomly (`train_test_split`). In logistics, this is wrong because you cannot use "tomorrow's delivery" to predict "today's traffic."
-* **My Solution:** I implemented a **Time-Based Split** strategy. The model is trained strictly on past data to predict future orders, simulating a real-world deployment environment.
-
-### 2. ⚡ Model Selection: Why LightGBM?
-After benchmarking against XGBoost and Random Forest, **LightGBM** was chosen for two critical reasons:
-* **Categorical Handling:** Logistics data is heavy on categories (e.g., `Weather_conditions: Stormy`, `Road_traffic_density: Jam`). LightGBM handles these natively without the memory explosion of One-Hot Encoding.
-* **Inference Speed:** It offers up to 10x faster training and prediction speeds, which is crucial for real-time dispatch systems.
-
-### 3. 📐 Feature Engineering (Domain Knowledge)
-Raw data is rarely enough. I engineered specific features to capture logistical reality:
-* **Haversine Distance:** Calculated the geodesic distance between warehouse and destination coordinates.
-* **Temporal Segments:** Created `Order_Period` buckets (Morning, Afternoon, Late Night) to capture human behavior and traffic patterns.
+**The Output:** A ranked list of high-risk orders (`smart_routing.csv`) and an interactive geospatial dashboard (`priority_map.html`) for operations managers.
 
 ---
 
-## ⚠️ The Risk Algorithm (The "Brain" of the System)
+## 2. 💾 Dataset & Inputs
 
-A raw prediction (e.g., "45 mins") is not actionable. I developed a heuristic **Weighted Risk Formula** to translate time into urgency.
+* **Source:** [Amazon Delivery Dataset](https://www.kaggle.com/datasets/sujalsuthar/amazon-delivery-dataset) via Kaggle (Sujal Suthar).
+* **Target Variable:** `Time_taken(min)` (Regression Task).
+* **Key Inputs:**
+    * **Agent Info:** Age, Rating.
+    * **Context:** Weather Conditions, Road Traffic Density.
+    * **Logistics:** Vehicle Type, Order Date/Time.
+    * **Geospatial:** Pickup & Delivery Coordinates (Lat/Lon).
+
+> *Note: Raw data is located in `data/raw/`. If missing, please download via the Kaggle link above.*
+
+---
+
+## 3. ⚙️ Pipeline Architecture
+
+The project follows a linear, modular workflow designed for reproducibility: 
+
+[Image of machine learning pipeline diagram]
+
+
+1.  **Cleaning & EDA:** Handling missing values, formatting dates, and analyzing distributions (`01_eda...`).
+2.  **Feature Engineering:** Creating geospatial and temporal features.
+3.  **Modeling:** Training LightGBM with a time-based split strategy (`02_modelling...`).
+4.  **Risk Scoring:** Calculating `Priority Score` based on model variance and external risks (`03_risk...`).
+5.  **Smart Routing & Viz:** Generating the final decision support map (`04_visualization...`).
+
+---
+
+## 4. 📐 Feature Engineering Highlights
+
+Raw data was transformed into actionable signals:
+
+* **📍 Haversine Distance:** Calculated the geodesic distance (km) between warehouse and delivery points using coordinates. 
+* **🕒 Temporal Buckets:** Created `Order_Period` (Morning, Afternoon, Evening, Late Night) to capture traffic patterns and human fatigue factors.
+* **🚦 Categorical Handling:** Optimized for LightGBM's native categorical support (avoiding sparse One-Hot matrices for High Cardinality data).
+* **📉 Outlier Management:** Capped extreme delivery times based on IQR logic to prevent model skewing.
+
+---
+
+## 5. 🚀 Modeling & Results
+
+### Methodology
+* **Split Strategy:** Used **Time-Based Splitting** (sorting by date) instead of random `train_test_split`. This prevents data leakage by ensuring the model trains on "past" data to predict "future" orders.
+* **Model Selection:** **LightGBM** was chosen over Random Forest and XGBoost due to its superior speed (10x faster inference) and native handling of categorical logistics variables.
+
+### Performance Metrics
+* **RMSE (Root Mean Squared Error):** Optimized to minimize minute-level deviations.
+* **R² Score:** High variance explanation capabilities.
+* **Feature Importance:** The model identified **Traffic Density**, **Vehicle Type**, and **Weather** as the top drivers of delay, validating the business logic.
+
+---
+
+## 6. ⚠️ Risk & Priority Score Definition
+
+A raw prediction (e.g., "45 mins") is not actionable. I engineered a heuristic logic to translate "Time" into "Urgency". 
+
+[Image of risk matrix heatmap]
+
+
+### A. Risk Labels (Prototype / Offline)
+Labels are derived from the Absolute Error between prediction and actual time:
+* **Low Risk:** Deviation < 15 mins
+* **Medium Risk:** 15 mins < Deviation < 30 mins
+* **High Risk:** Deviation > 30 mins
+
+### B. Priority Score Formula (Production)
+A weighted formula to rank orders dynamically:
 
 $$\text{Priority Score} = (\text{Norm. Prediction} \times \alpha) + (\text{Traffic Penalty} \times \beta) + (\text{Weather Penalty} \times \gamma)$$
 
-* **Logic:** A motorcycle courier in a "Sandstorm" is assigned a significantly higher risk multiplier than a van in "Sunny" weather, even if the distance is identical.
-* **Result:** The system flags these "silent risks" that simple distance calculations miss.
+* *Parameters ($\alpha, \beta, \gamma$) are tunable based on the company's SLA requirements.*
+* **Logic:** A motorcycle in a "Sandstorm" gets a higher priority score than a van in "Sunny" weather, even if the distance is shorter.
 
 ---
 
-## 📂 Project Architecture
+## 7. 📂 Key Outputs
 
-The repository is structured to separate data processing, modeling, and visualization for scalability.
+The system generates the following artifacts:
 
-```bash
-├── data/
-│   ├── raw/                 # Original dataset
-│   └── processed/           # Cleaned data, features, and risk scores
-├── models/
-│   ├── lightgbm_delivery.pkl # Serialized trained model
-│   └── features_used.csv     # Feature schema for reproducibility
-├── notebooks/
-│   ├── 01_eda_and_feature_engineering.ipynb  # Data cleaning & bottleneck analysis
-│   ├── 02_modelling.ipynb                    # LightGBM training (Time-based split)
-│   ├── 03_risk_analysis_and_routing.ipynb    # Priority Algorithm & Decision Logic
-│   └── 04_visualization.ipynb                # Dashboard generation
-├── visualizations/
-│   ├── priority_map.html    # INTERACTIVE DASHBOARD (Open in Browser)
-│   └── priority_table.csv   # Ranked list of high-risk orders
-├── requirements.txt         # Dependencies
-├── LICENSE                  # MIT License
-└── README.md                # Documentation
+* **`models/lightgbm_delivery.pkl`**: The trained, serialized model ready for inference.
+* **`models/features_used.csv`**: Schema file ensuring new data matches training columns.
+* **`data/processed/smart_routing.csv`**: The final operational file containing predictions and risk scores.
+* **`visualizations/priority_map.html`**: **The MVP Product.** An interactive map showing high-risk clusters. 
+* **`visualizations/priority_table.csv`**: A ranked list of orders requiring immediate attention.
 
+---
 
-## 👏 Acknowledgements & Disclaimer
+## 8. 🗺️ How to Use the Map
 
-Dataset: Amazon Delivery Dataset by Sujal Suthar (Kaggle).
+1.  Clone the repository and run the notebooks.
+2.  Navigate to the `visualizations/` folder.
+3.  Double-click **`priority_map.html`**.
+4.  The dashboard will open in your default web browser (Chrome/Edge/Safari).
+    * **🔴 Red Markers:** High Priority / High Risk Orders.
+    * **🟢 Heatmap:** General order density.
+    * **Click Markers:** View details like Order ID, Predicted Time, and Traffic Status.
 
-License: This project is open-sourced under the MIT License.
+---
 
-Note: This is a portfolio project demonstrating Operations Research and Data Science methodologies.
+## 9. 🔮 Limitations & Next Steps
+
+To evolve this from a generic portfolio project to an enterprise solution:
+
+* **Probabilistic Forecasting:** Move from point prediction to `P(delay > 30 min)` using Quantile Regression.
+* **Weight Calibration:** Use AHP (Analytic Hierarchy Process) or optimization to scientifically determine $\alpha, \beta, \gamma$ weights.
+* **VRP Integration:** Feed the risk scores into a Vehicle Routing Problem solver (e.g., Google OR-Tools) to auto-generate optimized routes.
+* **Deployment:** Containerize the pipeline using Docker and create a CLI for batch processing.
+
+---
+
+## 👤 Author
+
+**Halil Kaan Kaçar**
+* **Role:** Industrial Engineering Student & Logistics Optimization Enthusiast
+* **Focus:** Supply Chain Analytics, Machine Learning, Operations Research
+* **Connect:** [LinkedIn](https://www.linkedin.com/in/halil-kaan-kacar-59b366258/)
+
+---
+*Copyright (c) 2026 Halil Kaan Kaçar. Distributed under the MIT License.*
